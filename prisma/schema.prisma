@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String           @id @default(uuid())
+  name            String
+  email           String           @unique
+  passwordHash    String
+  role            String           @default("associate")
+
+  activities      Activity[]
+  pickAssignments PickAssignment[]
+  dispensedOrders Order[]          @relation("DispensedOrders")
+
+  createdAt       DateTime         @default(now())
+}
+
+model Order {
+  id              String           @id @default(uuid())
+  customerName    String
+  orderType       String           @default("pickup")
+  status          String           @default("created")
+  priority        String           @default("medium")
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  pickAssignments PickAssignment[]
+
+  dispenser       User?            @relation("DispensedOrders", fields: [dispenserId], references: [id])
+  dispenserId     String?
+
+  dispensedAt     DateTime?
+  delayReason     String?
+  activities      Activity[]
+}
+
+model PickAssignment {
+  id              String    @id @default(uuid())
+
+  area            String
+  sequence        Int       @default(1)
+  status          String    @default("ready_to_pick")
+
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  order           Order     @relation(fields: [orderId], references: [id])
+  orderId         String
+
+  associate       User?     @relation(fields: [associateId], references: [id])
+  associateId     String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([orderId, area, sequence])
+}
+
+model Activity {
+  id          String    @id @default(uuid())
+  action      String
+  fromStatus  String?
+  toStatus    String?
+  createdAt   DateTime  @default(now())
+
+  user        User?     @relation(fields: [userId], references: [id])
+  userId      String?
+
+  order       Order     @relation(fields: [orderId], references: [id])
+  orderId     String
+}
