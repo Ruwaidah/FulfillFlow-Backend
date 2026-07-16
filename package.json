@@ -7,11 +7,9 @@
     "lib": "lib"
   },
   "scripts": {
-  "start": "node dist/server.js",
-    "dev": "nodemon server.ts",
-    "server": "node dist/server.js",
+    "dev": "tsx watch server.ts",
     "build": "tsc",
-    "seed": "ts-node prisma/seed.ts"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
