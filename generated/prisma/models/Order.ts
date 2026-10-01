@@ -32,6 +32,8 @@ export type OrderMinAggregateOutputType = {
   priority: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  scheduledFor: Date | null
+  shipBy: Date | null
   dispenserId: string | null
   dispensedAt: Date | null
   delayReason: string | null
@@ -45,6 +47,8 @@ export type OrderMaxAggregateOutputType = {
   priority: string | null
   createdAt: Date | null
   updatedAt: Date | null
+  scheduledFor: Date | null
+  shipBy: Date | null
   dispenserId: string | null
   dispensedAt: Date | null
   delayReason: string | null
@@ -58,6 +62,8 @@ export type OrderCountAggregateOutputType = {
   priority: number
   createdAt: number
   updatedAt: number
+  scheduledFor: number
+  shipBy: number
   dispenserId: number
   dispensedAt: number
   delayReason: number
@@ -73,6 +79,8 @@ export type OrderMinAggregateInputType = {
   priority?: true
   createdAt?: true
   updatedAt?: true
+  scheduledFor?: true
+  shipBy?: true
   dispenserId?: true
   dispensedAt?: true
   delayReason?: true
@@ -86,6 +94,8 @@ export type OrderMaxAggregateInputType = {
   priority?: true
   createdAt?: true
   updatedAt?: true
+  scheduledFor?: true
+  shipBy?: true
   dispenserId?: true
   dispensedAt?: true
   delayReason?: true
@@ -99,6 +109,8 @@ export type OrderCountAggregateInputType = {
   priority?: true
   createdAt?: true
   updatedAt?: true
+  scheduledFor?: true
+  shipBy?: true
   dispenserId?: true
   dispensedAt?: true
   delayReason?: true
@@ -185,6 +197,8 @@ export type OrderGroupByOutputType = {
   priority: string
   createdAt: Date
   updatedAt: Date
+  scheduledFor: Date | null
+  shipBy: Date | null
   dispenserId: string | null
   dispensedAt: Date | null
   delayReason: string | null
@@ -219,6 +233,8 @@ export type OrderWhereInput = {
   priority?: Prisma.StringFilter<"Order"> | string
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
+  scheduledFor?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  shipBy?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   dispenserId?: Prisma.StringNullableFilter<"Order"> | string | null
   dispensedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   delayReason?: Prisma.StringNullableFilter<"Order"> | string | null
@@ -235,6 +251,8 @@ export type OrderOrderByWithRelationInput = {
   priority?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  scheduledFor?: Prisma.SortOrderInput | Prisma.SortOrder
+  shipBy?: Prisma.SortOrderInput | Prisma.SortOrder
   dispenserId?: Prisma.SortOrderInput | Prisma.SortOrder
   dispensedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   delayReason?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -254,6 +272,8 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   priority?: Prisma.StringFilter<"Order"> | string
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
+  scheduledFor?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  shipBy?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   dispenserId?: Prisma.StringNullableFilter<"Order"> | string | null
   dispensedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   delayReason?: Prisma.StringNullableFilter<"Order"> | string | null
@@ -270,6 +290,8 @@ export type OrderOrderByWithAggregationInput = {
   priority?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  scheduledFor?: Prisma.SortOrderInput | Prisma.SortOrder
+  shipBy?: Prisma.SortOrderInput | Prisma.SortOrder
   dispenserId?: Prisma.SortOrderInput | Prisma.SortOrder
   dispensedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   delayReason?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -289,6 +311,8 @@ export type OrderScalarWhereWithAggregatesInput = {
   priority?: Prisma.StringWithAggregatesFilter<"Order"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Order"> | Date | string
+  scheduledFor?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+  shipBy?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
   dispenserId?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   dispensedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
   delayReason?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
@@ -302,6 +326,8 @@ export type OrderCreateInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
   pickAssignments?: Prisma.PickAssignmentCreateNestedManyWithoutOrderInput
@@ -317,6 +343,8 @@ export type OrderUncheckedCreateInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispenserId?: string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
@@ -332,6 +360,8 @@ export type OrderUpdateInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pickAssignments?: Prisma.PickAssignmentUpdateManyWithoutOrderNestedInput
@@ -347,6 +377,8 @@ export type OrderUncheckedUpdateInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispenserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -362,6 +394,8 @@ export type OrderCreateManyInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispenserId?: string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
@@ -375,6 +409,8 @@ export type OrderUpdateManyMutationInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -387,6 +423,8 @@ export type OrderUncheckedUpdateManyInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispenserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -410,6 +448,8 @@ export type OrderCountOrderByAggregateInput = {
   priority?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  scheduledFor?: Prisma.SortOrder
+  shipBy?: Prisma.SortOrder
   dispenserId?: Prisma.SortOrder
   dispensedAt?: Prisma.SortOrder
   delayReason?: Prisma.SortOrder
@@ -423,6 +463,8 @@ export type OrderMaxOrderByAggregateInput = {
   priority?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  scheduledFor?: Prisma.SortOrder
+  shipBy?: Prisma.SortOrder
   dispenserId?: Prisma.SortOrder
   dispensedAt?: Prisma.SortOrder
   delayReason?: Prisma.SortOrder
@@ -436,6 +478,8 @@ export type OrderMinOrderByAggregateInput = {
   priority?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  scheduledFor?: Prisma.SortOrder
+  shipBy?: Prisma.SortOrder
   dispenserId?: Prisma.SortOrder
   dispensedAt?: Prisma.SortOrder
   delayReason?: Prisma.SortOrder
@@ -532,6 +576,8 @@ export type OrderCreateWithoutDispenserInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
   pickAssignments?: Prisma.PickAssignmentCreateNestedManyWithoutOrderInput
@@ -546,6 +592,8 @@ export type OrderUncheckedCreateWithoutDispenserInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
   pickAssignments?: Prisma.PickAssignmentUncheckedCreateNestedManyWithoutOrderInput
@@ -589,6 +637,8 @@ export type OrderScalarWhereInput = {
   priority?: Prisma.StringFilter<"Order"> | string
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
+  scheduledFor?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  shipBy?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   dispenserId?: Prisma.StringNullableFilter<"Order"> | string | null
   dispensedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
   delayReason?: Prisma.StringNullableFilter<"Order"> | string | null
@@ -602,6 +652,8 @@ export type OrderCreateWithoutPickAssignmentsInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
   dispenser?: Prisma.UserCreateNestedOneWithoutDispensedOrdersInput
@@ -616,6 +668,8 @@ export type OrderUncheckedCreateWithoutPickAssignmentsInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispenserId?: string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
@@ -646,6 +700,8 @@ export type OrderUpdateWithoutPickAssignmentsInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dispenser?: Prisma.UserUpdateOneWithoutDispensedOrdersNestedInput
@@ -660,6 +716,8 @@ export type OrderUncheckedUpdateWithoutPickAssignmentsInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispenserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -674,6 +732,8 @@ export type OrderCreateWithoutActivitiesInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
   pickAssignments?: Prisma.PickAssignmentCreateNestedManyWithoutOrderInput
@@ -688,6 +748,8 @@ export type OrderUncheckedCreateWithoutActivitiesInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispenserId?: string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
@@ -718,6 +780,8 @@ export type OrderUpdateWithoutActivitiesInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pickAssignments?: Prisma.PickAssignmentUpdateManyWithoutOrderNestedInput
@@ -732,6 +796,8 @@ export type OrderUncheckedUpdateWithoutActivitiesInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispenserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -746,6 +812,8 @@ export type OrderCreateManyDispenserInput = {
   priority?: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  scheduledFor?: Date | string | null
+  shipBy?: Date | string | null
   dispensedAt?: Date | string | null
   delayReason?: string | null
 }
@@ -758,6 +826,8 @@ export type OrderUpdateWithoutDispenserInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pickAssignments?: Prisma.PickAssignmentUpdateManyWithoutOrderNestedInput
@@ -772,6 +842,8 @@ export type OrderUncheckedUpdateWithoutDispenserInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pickAssignments?: Prisma.PickAssignmentUncheckedUpdateManyWithoutOrderNestedInput
@@ -786,6 +858,8 @@ export type OrderUncheckedUpdateManyWithoutDispenserInput = {
   priority?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scheduledFor?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  shipBy?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dispensedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   delayReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -838,6 +912,8 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   priority?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  scheduledFor?: boolean
+  shipBy?: boolean
   dispenserId?: boolean
   dispensedAt?: boolean
   delayReason?: boolean
@@ -855,6 +931,8 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   priority?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  scheduledFor?: boolean
+  shipBy?: boolean
   dispenserId?: boolean
   dispensedAt?: boolean
   delayReason?: boolean
@@ -869,6 +947,8 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   priority?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  scheduledFor?: boolean
+  shipBy?: boolean
   dispenserId?: boolean
   dispensedAt?: boolean
   delayReason?: boolean
@@ -883,12 +963,14 @@ export type OrderSelectScalar = {
   priority?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  scheduledFor?: boolean
+  shipBy?: boolean
   dispenserId?: boolean
   dispensedAt?: boolean
   delayReason?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "customerName" | "orderType" | "status" | "priority" | "createdAt" | "updatedAt" | "dispenserId" | "dispensedAt" | "delayReason", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "customerName" | "orderType" | "status" | "priority" | "createdAt" | "updatedAt" | "scheduledFor" | "shipBy" | "dispenserId" | "dispensedAt" | "delayReason", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   pickAssignments?: boolean | Prisma.Order$pickAssignmentsArgs<ExtArgs>
   dispenser?: boolean | Prisma.Order$dispenserArgs<ExtArgs>
@@ -917,6 +999,8 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     priority: string
     createdAt: Date
     updatedAt: Date
+    scheduledFor: Date | null
+    shipBy: Date | null
     dispenserId: string | null
     dispensedAt: Date | null
     delayReason: string | null
@@ -1353,6 +1437,8 @@ export interface OrderFieldRefs {
   readonly priority: Prisma.FieldRef<"Order", 'String'>
   readonly createdAt: Prisma.FieldRef<"Order", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly scheduledFor: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly shipBy: Prisma.FieldRef<"Order", 'DateTime'>
   readonly dispenserId: Prisma.FieldRef<"Order", 'String'>
   readonly dispensedAt: Prisma.FieldRef<"Order", 'DateTime'>
   readonly delayReason: Prisma.FieldRef<"Order", 'String'>

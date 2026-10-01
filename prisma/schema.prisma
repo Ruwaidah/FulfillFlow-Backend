@@ -31,6 +31,9 @@ model Order {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
+  scheduledFor    DateTime?
+  shipBy          DateTime?
+
   pickAssignments PickAssignment[]
 
   dispenser       User?            @relation("DispensedOrders", fields: [dispenserId], references: [id])
@@ -38,6 +41,7 @@ model Order {
 
   dispensedAt     DateTime?
   delayReason     String?
+
   activities      Activity[]
 }
 

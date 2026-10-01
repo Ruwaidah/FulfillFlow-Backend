@@ -762,6 +762,8 @@ export const OrderScalarFieldEnum = {
   priority: 'priority',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  scheduledFor: 'scheduledFor',
+  shipBy: 'shipBy',
   dispenserId: 'dispenserId',
   dispensedAt: 'dispensedAt',
   delayReason: 'delayReason'

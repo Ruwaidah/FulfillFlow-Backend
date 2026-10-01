@@ -11,16 +11,6 @@ export const getOrders = async (
         const { status, orderType } = req.query;
 
         const orders = await prisma.order.findMany({
-            where: {
-                ...(status && {
-                    status: String(status),
-                }),
-
-                ...(orderType && {
-                    orderType: String(orderType),
-                }),
-            },
-
             include: {
                 activities: {
                     include: {
@@ -31,7 +21,6 @@ export const getOrders = async (
                             },
                         },
                     },
-
                     orderBy: {
                         createdAt: "desc",
                     },
@@ -61,6 +50,7 @@ export const getOrders = async (
             },
         });
 
+
         return res.status(200).json(orders);
     } catch (error) {
         console.error("GET ORDERS ERROR:", error);
@@ -81,6 +71,7 @@ export const getOrderById = async (
     req: Request,
     res: Response
 ) => {
+
     try {
         const orderId = String(req.params.id);
 
@@ -166,6 +157,7 @@ export const createOrder = async (
             customerName,
             priority = "medium",
             orderType,
+            scheduledFor,
         } = req.body;
 
         if (!customerName || !orderType) {
@@ -186,19 +178,70 @@ export const createOrder = async (
             });
         }
 
+        if (
+            (orderType === "pickup" ||
+                orderType === "delivery") &&
+            !scheduledFor
+        ) {
+            return res.status(400).json({
+                error:
+                    "scheduledFor is required for pickup and delivery orders",
+            });
+        }
+
+        let scheduledDate: Date | null = null;
+
+        if (scheduledFor) {
+            scheduledDate = new Date(scheduledFor);
+
+            if (Number.isNaN(scheduledDate.getTime())) {
+                return res.status(400).json({
+                    error: "Invalid scheduled date",
+                });
+            }
+
+            // Don't allow scheduling in the past
+            if (scheduledDate < new Date()) {
+                return res.status(400).json({
+                    error:
+                        "Scheduled date must be in the future",
+                });
+            }
+        }
+
         const order = await prisma.order.create({
             data: {
                 customerName,
                 priority,
                 orderType,
                 status: "created",
+
+                scheduledFor:
+                    orderType === "pickup" ||
+                        orderType === "delivery"
+                        ? scheduledDate
+                        : null,
+
+                activities: {
+                    create: {
+                        action: "Order created",
+                        fromStatus: null,
+                        toStatus: "created",
+                    },
+                },
+            },
+
+            include: {
+                activities: true,
             },
         });
 
         return res.status(201).json(order);
-
     } catch (error) {
-        console.error("CREATE ORDER ERROR:", error);
+        console.error(
+            "CREATE ORDER ERROR:",
+            error
+        );
 
         return res.status(500).json({
             error: "Failed to create order",

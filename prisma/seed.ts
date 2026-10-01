@@ -1,11 +1,15 @@
 import "dotenv/config";
+
+import { randomUUID } from "crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
 
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-    throw new Error("DATABASE_URL is not defined in your .env file");
+    throw new Error(
+        "DATABASE_URL is not defined in your .env file"
+    );
 }
 
 const adapter = new PrismaPg({
@@ -56,96 +60,165 @@ type PickStatus =
     | "completed";
 
 // --------------------------------------------------
-// ORDER FLOWS
+// CONFIG
 // --------------------------------------------------
 
-const orderFlows: Record<OrderType, OrderStatus[]> = {
-    pickup: [
-        "created",
-        "pending",
-        "ready_to_pick",
-        "picking",
-        "ready",
-        "dispensed",
-    ],
+const ORDERS_PER_DAY = 200;
 
-    delivery: [
-        "created",
-        "pending",
-        "ready_to_pick",
-        "picking",
-        "ready",
-        "dispensed",
-        "out_for_delivery",
-        "delivered",
-    ],
+// -7 through +6 = 14 days
+const DAY_OFFSETS = [
+    -7,
+    -6,
+    -5,
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+];
 
-    shipping: [
-        "created",
-        "pending",
-        "ready_to_pick",
-        "picking",
-        "ready",
-        "shipped",
-        "delivered",
-    ],
-};
+const TOTAL_ORDERS =
+    ORDERS_PER_DAY * DAY_OFFSETS.length;
 
 // --------------------------------------------------
-// MOCK CUSTOMER NAMES
+// MOCK DATA
 // --------------------------------------------------
 
-const customerNames = [
-    "James Wilson",
-    "Maria Garcia",
-    "Robert Miller",
-    "Jennifer Anderson",
-    "David Martinez",
-    "Lisa Thompson",
-    "Christopher Lee",
-    "Amanda White",
-    "Daniel Harris",
-    "Jessica Clark",
-    "Michael Johnson",
-    "Sarah Williams",
-    "Anthony Brown",
-    "Ashley Davis",
-    "Matthew Rodriguez",
-    "Emily Hernandez",
-    "Andrew Lopez",
-    "Samantha Gonzalez",
-    "Joshua Perez",
-    "Nicole Taylor",
-    "Ryan Moore",
-    "Rachel Jackson",
-    "Brandon Martin",
-    "Stephanie Lee",
-    "Kevin Thompson",
-    "Lauren White",
-    "Justin Harris",
-    "Megan Clark",
-    "Eric Lewis",
-    "Brittany Robinson",
-    "Jason Walker",
-    "Heather Hall",
-    "Aaron Allen",
-    "Melissa Young",
-    "Nathan King",
-    "Rebecca Wright",
-    "Tyler Scott",
-    "Michelle Green",
-    "Jonathan Baker",
-    "Amber Adams",
-    "Charles Nelson",
-    "Danielle Carter",
-    "Adam Mitchell",
-    "Kimberly Roberts",
-    "Steven Turner",
-    "Christina Phillips",
-    "Brian Campbell",
-    "Angela Parker",
-    "Patrick Evans",
-    "Monica Edwards",
+const firstNames = [
+    "James",
+    "Maria",
+    "Robert",
+    "Jennifer",
+    "David",
+    "Lisa",
+    "Christopher",
+    "Amanda",
+    "Daniel",
+    "Jessica",
+    "Michael",
+    "Sarah",
+    "Anthony",
+    "Ashley",
+    "Matthew",
+    "Emily",
+    "Andrew",
+    "Samantha",
+    "Joshua",
+    "Nicole",
+    "Ryan",
+    "Rachel",
+    "Brandon",
+    "Stephanie",
+    "Kevin",
+    "Lauren",
+    "Justin",
+    "Megan",
+    "Eric",
+    "Brittany",
+    "Jason",
+    "Heather",
+    "Aaron",
+    "Melissa",
+    "Nathan",
+    "Rebecca",
+    "Tyler",
+    "Michelle",
+    "Jonathan",
+    "Amber",
+];
+
+const lastNames = [
+    "Wilson",
+    "Garcia",
+    "Miller",
+    "Anderson",
+    "Martinez",
+    "Thompson",
+    "Lee",
+    "White",
+    "Harris",
+    "Clark",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Davis",
+    "Rodriguez",
+    "Hernandez",
+    "Lopez",
+    "Gonzalez",
+    "Perez",
+    "Taylor",
+    "Moore",
+    "Jackson",
+    "Martin",
+    "Lewis",
+    "Robinson",
+    "Walker",
+    "Hall",
+    "Allen",
+    "Young",
+    "King",
+    "Wright",
+    "Scott",
+    "Green",
+    "Baker",
+    "Adams",
+    "Nelson",
+    "Carter",
+    "Mitchell",
+    "Roberts",
+    "Turner",
+];
+
+const associateNames = [
+    "Sarah Johnson",
+    "Michael Brown",
+    "Emily Davis",
+    "Daniel Wilson",
+    "Olivia Martinez",
+    "Noah Anderson",
+    "Sophia Taylor",
+    "Liam Thompson",
+    "Ava Garcia",
+    "Ethan Miller",
+    "Mia Rodriguez",
+    "Lucas Lee",
+    "Isabella Harris",
+    "Mason Clark",
+    "Charlotte Lewis",
+    "Logan Walker",
+    "Amelia Hall",
+    "Elijah Allen",
+    "Harper Young",
+    "Benjamin King",
+];
+
+const delayReasons = [
+    "High order volume",
+    "Item availability issue",
+    "Picker delay",
+    "Customer requested later time",
+    "Weather delay",
+    "Delivery capacity issue",
+    "Inventory verification",
+];
+
+const orderTypes: OrderType[] = [
+    "pickup",
+    "delivery",
+    "shipping",
+];
+
+const priorities: Priority[] = [
+    "low",
+    "medium",
+    "high",
 ];
 
 // --------------------------------------------------
@@ -153,52 +226,326 @@ const customerNames = [
 // --------------------------------------------------
 
 function getRandomItem<T>(items: T[]): T {
-    return items[Math.floor(Math.random() * items.length)];
+    return items[
+        Math.floor(Math.random() * items.length)
+    ];
 }
 
-function randomNumber(min: number, max: number): number {
+function randomNumber(
+    min: number,
+    max: number
+): number {
     return (
-        Math.floor(Math.random() * (max - min + 1)) + min
+        Math.floor(
+            Math.random() * (max - min + 1)
+        ) + min
     );
 }
 
-function randomDateWithinLastDays(days: number): Date {
-    const now = new Date();
-
-    const milliseconds =
-        Math.floor(
-            Math.random() *
-            days *
-            24 *
-            60 *
-            60 *
-            1000
-        );
-
-    return new Date(now.getTime() - milliseconds);
+function addMinutes(
+    date: Date,
+    minutes: number
+): Date {
+    return new Date(
+        date.getTime() +
+        minutes * 60 * 1000
+    );
 }
 
-function getRandomOrderStatus(
-    orderType: OrderType
+function addHours(
+    date: Date,
+    hours: number
+): Date {
+    return new Date(
+        date.getTime() +
+        hours * 60 * 60 * 1000
+    );
+}
+
+function addDays(
+    date: Date,
+    days: number
+): Date {
+    const result = new Date(date);
+
+    result.setDate(
+        result.getDate() + days
+    );
+
+    return result;
+}
+
+function randomCustomerName(): string {
+    return `${getRandomItem(firstNames)} ${getRandomItem(
+        lastNames
+    )}`;
+}
+
+function weightedRandom<T>(
+    values: Array<{
+        value: T;
+        weight: number;
+    }>
+): T {
+    const totalWeight = values.reduce(
+        (sum, item) =>
+            sum + item.weight,
+        0
+    );
+
+    let random =
+        Math.random() * totalWeight;
+
+    for (const item of values) {
+        random -= item.weight;
+
+        if (random <= 0) {
+            return item.value;
+        }
+    }
+
+    return values[
+        values.length - 1
+    ].value;
+}
+
+// --------------------------------------------------
+// SCHEDULED DATE
+// --------------------------------------------------
+
+function createScheduledDate(
+    dayOffset: number
+): Date {
+    const date = new Date();
+
+    date.setHours(0, 0, 0, 0);
+
+    date.setDate(
+        date.getDate() + dayOffset
+    );
+
+    // Scheduled between 8 AM and 9 PM
+    date.setHours(
+        randomNumber(8, 20),
+        getRandomItem([
+            0,
+            15,
+            30,
+            45,
+        ]),
+        0,
+        0
+    );
+
+    return date;
+}
+
+// --------------------------------------------------
+// CREATED DATE
+// --------------------------------------------------
+
+function createCreatedDate(
+    scheduledFor: Date
+): Date {
+    const daysBefore =
+        randomNumber(1, 5);
+
+    const createdAt =
+        addDays(
+            scheduledFor,
+            -daysBefore
+        );
+
+    createdAt.setHours(
+        randomNumber(7, 20),
+        randomNumber(0, 59),
+        0,
+        0
+    );
+
+    return createdAt;
+}
+
+// --------------------------------------------------
+// ORDER STATUS
+// --------------------------------------------------
+
+function getOrderStatus(
+    orderType: OrderType,
+    dayOffset: number
 ): OrderStatus {
-    const flow = orderFlows[orderType];
+    const randomValue =
+        Math.random();
 
-    const randomValue = Math.random();
-
-    if (randomValue < 0.05) {
+    // Rare canceled orders
+    if (randomValue < 0.025) {
         return "canceled";
     }
 
-    if (randomValue < 0.10) {
+    // Expired should mainly be today/past
+    if (
+        dayOffset <= 0 &&
+        randomValue < 0.045
+    ) {
         return "expired";
     }
 
-    if (randomValue < 0.15) {
+    // Delays mostly today/past
+    if (
+        dayOffset <= 1 &&
+        randomValue < 0.08
+    ) {
         return "delayed";
     }
 
-    return getRandomItem(flow);
+    // ----------------------------------------------
+    // FUTURE: 2-6 days away
+    // ----------------------------------------------
+
+    if (dayOffset >= 2) {
+        return weightedRandom([
+            {
+                value: "created",
+                weight: 25,
+            },
+            {
+                value: "pending",
+                weight: 45,
+            },
+            {
+                value: "ready_to_pick",
+                weight: 30,
+            },
+        ]);
+    }
+
+    // ----------------------------------------------
+    // TOMORROW
+    // ----------------------------------------------
+
+    if (dayOffset === 1) {
+        return weightedRandom([
+            {
+                value: "pending",
+                weight: 30,
+            },
+            {
+                value: "ready_to_pick",
+                weight: 35,
+            },
+            {
+                value: "picking",
+                weight: 20,
+            },
+            {
+                value: "ready",
+                weight: 15,
+            },
+        ]);
+    }
+
+    // ----------------------------------------------
+    // TODAY
+    // ----------------------------------------------
+
+    if (dayOffset === 0) {
+        if (orderType === "pickup") {
+            return weightedRandom([
+                { value: "created", weight: 10 },
+                { value: "pending", weight: 15 },
+                { value: "ready_to_pick", weight: 20 },
+                { value: "picking", weight: 20 },
+                { value: "ready", weight: 20 },
+                { value: "dispensed", weight: 15 },
+            ]);
+        }
+
+        if (orderType === "delivery") {
+            return weightedRandom([
+                { value: "created", weight: 10 },
+                { value: "pending", weight: 15 },
+                { value: "ready_to_pick", weight: 15 },
+                { value: "picking", weight: 20 },
+                { value: "ready", weight: 15 },
+                { value: "dispensed", weight: 10 },
+                { value: "out_for_delivery", weight: 10 },
+                { value: "delivered", weight: 5 },
+            ]);
+        }
+
+        // shipping
+        return weightedRandom([
+            { value: "created", weight: 10 },
+            { value: "pending", weight: 15 },
+            { value: "ready_to_pick", weight: 20 },
+            { value: "picking", weight: 20 },
+            { value: "ready", weight: 15 },
+            { value: "shipped", weight: 15 },
+            { value: "delivered", weight: 5 },
+        ]);
+    }
+
+    // ----------------------------------------------
+    // PAST
+    // ----------------------------------------------
+
+    if (orderType === "pickup") {
+        return weightedRandom([
+            {
+                value: "picking",
+                weight: 5,
+            },
+            {
+                value: "ready",
+                weight: 10,
+            },
+            {
+                value: "dispensed",
+                weight: 85,
+            },
+        ]);
+    }
+
+    if (orderType === "delivery") {
+        return weightedRandom([
+            {
+                value: "ready",
+                weight: 5,
+            },
+            {
+                value: "dispensed",
+                weight: 10,
+            },
+            {
+                value: "out_for_delivery",
+                weight: 15,
+            },
+            {
+                value: "delivered",
+                weight: 70,
+            },
+        ]);
+    }
+
+    return weightedRandom([
+        {
+            value: "ready",
+            weight: 5,
+        },
+        {
+            value: "shipped",
+            weight: 20,
+        },
+        {
+            value: "delivered",
+            weight: 75,
+        },
+    ]);
 }
+
+// --------------------------------------------------
+// PICK STATUS
+// --------------------------------------------------
 
 function getPickStatusForOrder(
     orderStatus: OrderStatus
@@ -206,18 +553,31 @@ function getPickStatusForOrder(
     if (
         orderStatus === "created" ||
         orderStatus === "pending" ||
-        orderStatus === "ready_to_pick" ||
+        orderStatus ===
+        "ready_to_pick" ||
         orderStatus === "canceled" ||
         orderStatus === "expired"
     ) {
         return "ready_to_pick";
     }
 
-    if (orderStatus === "picking") {
-        return getRandomItem<PickStatus>([
-            "ready_to_pick",
-            "picking",
-            "completed",
+    if (
+        orderStatus === "picking" ||
+        orderStatus === "delayed"
+    ) {
+        return weightedRandom([
+            {
+                value: "ready_to_pick",
+                weight: 25,
+            },
+            {
+                value: "picking",
+                weight: 35,
+            },
+            {
+                value: "completed",
+                weight: 40,
+            },
         ]);
     }
 
@@ -225,348 +585,471 @@ function getPickStatusForOrder(
 }
 
 // --------------------------------------------------
+// BUILD PICK AREAS
+// --------------------------------------------------
+
+function buildPickTasks(): Array<{
+    area: PickArea;
+    sequence: number;
+}> {
+    const picks: Array<{
+        area: PickArea;
+        sequence: number;
+    }> = [];
+
+    // Ambient: always
+    const ambientCount =
+        randomNumber(1, 3);
+
+    for (
+        let sequence = 1;
+        sequence <= ambientCount;
+        sequence++
+    ) {
+        picks.push({
+            area: "ambient",
+            sequence,
+        });
+    }
+
+    // Chilled: 75%
+    if (Math.random() < 0.75) {
+        const chilledCount =
+            randomNumber(1, 2);
+
+        for (
+            let sequence = 1;
+            sequence <= chilledCount;
+            sequence++
+        ) {
+            picks.push({
+                area: "chilled",
+                sequence,
+            });
+        }
+    }
+
+    // Frozen: 60%
+    if (Math.random() < 0.6) {
+        const frozenCount =
+            randomNumber(1, 2);
+
+        for (
+            let sequence = 1;
+            sequence <= frozenCount;
+            sequence++
+        ) {
+            picks.push({
+                area: "frozen",
+                sequence,
+            });
+        }
+    }
+
+    // Oversized: 30%
+    if (Math.random() < 0.3) {
+        picks.push({
+            area: "oversized",
+            sequence: 1,
+        });
+    }
+
+    return picks;
+}
+
+// --------------------------------------------------
+// CREATE IN CHUNKS
+// --------------------------------------------------
+
+async function createInChunks<T>(
+    rows: T[],
+    chunkSize: number,
+    create: (chunk: T[]) => Promise<unknown>
+) {
+    for (
+        let index = 0;
+        index < rows.length;
+        index += chunkSize
+    ) {
+        const chunk = rows.slice(
+            index,
+            index + chunkSize
+        );
+
+        await create(chunk);
+    }
+}
+
+// --------------------------------------------------
 // MAIN
 // --------------------------------------------------
 
 async function main() {
-    console.log("Starting FulfillFlow database seed...");
+    console.log("");
+    console.log(
+        "Starting FulfillFlow database seed..."
+    );
 
     // --------------------------------------------------
     // DELETE OLD DATA
     // --------------------------------------------------
 
-    console.log("Deleting old data...");
+    console.log(
+        "Deleting old data..."
+    );
 
     await prisma.activity.deleteMany();
     await prisma.pickAssignment.deleteMany();
     await prisma.order.deleteMany();
     await prisma.user.deleteMany();
 
-    console.log("Old activities deleted");
-    console.log("Old pick assignments deleted");
-    console.log("Old orders deleted");
-    console.log("Old users deleted");
+    console.log(
+        "Old data deleted."
+    );
 
     // --------------------------------------------------
-    // CREATE USERS
+    // USERS
     // --------------------------------------------------
 
-    console.log("Creating users...");
+    console.log(
+        "Creating users..."
+    );
 
-    const teamLead = await prisma.user.create({
+    const teamLeadId =
+        randomUUID();
+
+    await prisma.user.create({
         data: {
+            id: teamLeadId,
             name: "Alex Morgan",
-            email: "alex@fulfillflow.com",
-            passwordHash: "mock-password",
+            email:
+                "alex@fulfillflow.com",
+            passwordHash:
+                "mock-password",
             role: "team_lead",
         },
     });
 
-    const sarah = await prisma.user.create({
-        data: {
-            name: "Sarah Johnson",
-            email: "sarah@fulfillflow.com",
-            passwordHash: "mock-password",
-            role: "associate",
-        },
+    const associateRows =
+        associateNames.map(
+            (name, index) => ({
+                id: randomUUID(),
+                name,
+
+                email: `associate${index + 1}@fulfillflow.com`,
+
+                passwordHash:
+                    "mock-password",
+
+                role: "associate",
+            })
+        );
+
+    await prisma.user.createMany({
+        data: associateRows,
     });
 
-    const michael = await prisma.user.create({
-        data: {
-            name: "Michael Brown",
-            email: "michael@fulfillflow.com",
-            passwordHash: "mock-password",
-            role: "associate",
-        },
-    });
+    const associateIds =
+        associateRows.map(
+            (associate) =>
+                associate.id
+        );
 
-    const emily = await prisma.user.create({
-        data: {
-            name: "Emily Davis",
-            email: "emily@fulfillflow.com",
-            passwordHash: "mock-password",
-            role: "associate",
-        },
-    });
-
-    const daniel = await prisma.user.create({
-        data: {
-            name: "Daniel Wilson",
-            email: "daniel@fulfillflow.com",
-            passwordHash: "mock-password",
-            role: "associate",
-        },
-    });
-
-    const olivia = await prisma.user.create({
-        data: {
-            name: "Olivia Martinez",
-            email: "olivia@fulfillflow.com",
-            passwordHash: "mock-password",
-            role: "associate",
-        },
-    });
-
-    const associates = [
-        sarah,
-        michael,
-        emily,
-        daniel,
-        olivia,
-    ];
-
-    console.log(`${associates.length + 1} users created`);
+    console.log(
+        `${associateRows.length + 1} users created`
+    );
 
     // --------------------------------------------------
-    // CREATE 50 ORDERS
+    // ARRAYS FOR BULK INSERT
     // --------------------------------------------------
 
-    console.log("Creating 50 orders...");
+    const ordersToCreate: any[] = [];
+    const picksToCreate: any[] = [];
+    const activitiesToCreate: any[] =
+        [];
 
-    const orderTypes: OrderType[] = [
-        "pickup",
-        "delivery",
-        "shipping",
-    ];
+    // --------------------------------------------------
+    // CREATE ORDERS
+    // --------------------------------------------------
 
-    const priorities: Priority[] = [
-        "low",
-        "medium",
-        "high",
-    ];
+    console.log(
+        `Building ${TOTAL_ORDERS} orders...`
+    );
 
-    for (let index = 0; index < 50; index++) {
-        const orderType =
-            getRandomItem(orderTypes);
+    for (const dayOffset of DAY_OFFSETS) {
+        for (
+            let index = 0;
+            index < ORDERS_PER_DAY;
+            index++
+        ) {
+            const orderId =
+                randomUUID();
 
-        const status =
-            getRandomOrderStatus(orderType);
+            const orderType: OrderType =
+                index % 3 === 0
+                    ? "pickup"
+                    : index % 3 === 1
+                        ? "delivery"
+                        : "shipping";
 
-        const priority =
-            getRandomItem(priorities);
+            const status =
+                getOrderStatus(
+                    orderType,
+                    dayOffset
+                );
 
-        const createdAt =
-            randomDateWithinLastDays(30);
+            const priority =
+                weightedRandom([
+                    {
+                        value:
+                            "low" as Priority,
+                        weight: 25,
+                    },
+                    {
+                        value:
+                            "medium" as Priority,
+                        weight: 55,
+                    },
+                    {
+                        value:
+                            "high" as Priority,
+                        weight: 20,
+                    },
+                ]);
 
-        // Only dispensed pickup/delivery orders get a dispenser.
-        const dispenser =
-            status === "dispensed"
-                ? getRandomItem(associates)
-                : null;
+            const scheduledFor =
+                orderType === "pickup" ||
+                    orderType === "delivery"
+                    ? createScheduledDate(dayOffset)
+                    : null;
 
-        const dispensedAt =
-            dispenser
-                ? new Date(
-                    createdAt.getTime() +
-                    randomNumber(60, 360) *
-                    60 *
-                    1000
-                )
-                : null;
+            const createdAt =
+                scheduledFor
+                    ? createCreatedDate(scheduledFor)
+                    : createCreatedDate(new Date());
 
-        const order = await prisma.order.create({
-            data: {
-                customerName:
-                    customerNames[index],
+            const shipBy =
+                orderType === "shipping"
+                    ? createScheduledDate(dayOffset)
+                    : null;
 
+            // Use scheduled time for pickup/delivery.
+            // Shipping gets an operational date after the order was created.
+            const operationalDate =
+                scheduledFor ??
+                addHours(
+                    createdAt,
+                    randomNumber(12, 48)
+                );
+
+            const delayReason =
+                status === "delayed"
+                    ? getRandomItem(
+                        delayReasons
+                    )
+                    : null;
+
+            // --------------------------------------------------
+            // DISPENSER
+            // --------------------------------------------------
+
+            const shouldHaveDispenser =
+                orderType ===
+                    "pickup" &&
+                    status ===
+                    "dispensed"
+                    ? true
+                    : orderType ===
+                    "delivery" &&
+                    [
+                        "dispensed",
+                        "out_for_delivery",
+                        "delivered",
+                    ].includes(
+                        status
+                    );
+
+            const dispenserId =
+                shouldHaveDispenser
+                    ? getRandomItem(
+                        associateIds
+                    )
+                    : null;
+
+            let dispensedAt:
+                | Date
+                | null = null;
+
+            if (dispenserId) {
+                dispensedAt =
+                    addMinutes(
+                        operationalDate,
+                        randomNumber(
+                            -30,
+                            30
+                        )
+                    );
+            }
+
+            ordersToCreate.push({
+                id: orderId,
+                customerName: randomCustomerName(),
                 orderType,
                 status,
                 priority,
                 createdAt,
-
-                dispenserId:
-                    dispenser?.id ?? null,
-
+                scheduledFor,
+                shipBy,
+                dispenserId,
                 dispensedAt,
-            },
-        });
+                delayReason,
+            });
 
-        // --------------------------------------------------
-        // CREATE ORDER CREATED ACTIVITY
-        // --------------------------------------------------
+            // --------------------------------------------------
+            // ORDER CREATED ACTIVITY
+            // --------------------------------------------------
 
-        await prisma.activity.create({
-            data: {
-                action: "Order created",
+            activitiesToCreate.push({
+                id: randomUUID(),
+
+                action:
+                    "Order created",
+
                 fromStatus: null,
+
                 toStatus: "created",
+
                 createdAt,
 
-                userId: teamLead.id,
-                orderId: order.id,
-            },
-        });
+                userId:
+                    teamLeadId,
 
-        // --------------------------------------------------
-        // BUILD PICK TASKS
-        // --------------------------------------------------
-
-        const picksToCreate: {
-            area: PickArea;
-            sequence: number;
-        }[] = [];
-
-        // 1-3 ambient picks
-        const ambientCount =
-            randomNumber(1, 3);
-
-        for (
-            let sequence = 1;
-            sequence <= ambientCount;
-            sequence++
-        ) {
-            picksToCreate.push({
-                area: "ambient",
-                sequence,
+                orderId,
             });
-        }
 
-        // 75% chance of chilled picks
-        if (Math.random() < 0.75) {
-            const chilledCount =
-                randomNumber(1, 2);
+            // --------------------------------------------------
+            // PICK ASSIGNMENTS
+            // --------------------------------------------------
+
+            const pickTasks =
+                buildPickTasks();
+
+            let latestPickTime =
+                createdAt;
 
             for (
-                let sequence = 1;
-                sequence <= chilledCount;
-                sequence++
+                const pickTask of pickTasks
             ) {
-                picksToCreate.push({
-                    area: "chilled",
-                    sequence,
-                });
-            }
-        }
+                const pickId =
+                    randomUUID();
 
-        // 60% chance of frozen picks
-        if (Math.random() < 0.6) {
-            const frozenCount =
-                randomNumber(1, 2);
+                const pickStatus =
+                    getPickStatusForOrder(
+                        status
+                    );
 
-            for (
-                let sequence = 1;
-                sequence <= frozenCount;
-                sequence++
-            ) {
-                picksToCreate.push({
-                    area: "frozen",
-                    sequence,
-                });
-            }
-        }
+                let associateId:
+                    | string
+                    | null = null;
 
-        // 30% chance of oversized
-        if (Math.random() < 0.3) {
-            picksToCreate.push({
-                area: "oversized",
-                sequence: 1,
-            });
-        }
+                let startedAt:
+                    | Date
+                    | null = null;
 
-        // --------------------------------------------------
-        // CREATE PICK ASSIGNMENTS
-        // --------------------------------------------------
+                let completedAt:
+                    | Date
+                    | null = null;
 
-        for (const pickData of picksToCreate) {
-            const pickStatus =
-                getPickStatusForOrder(status);
+                if (
+                    pickStatus ===
+                    "picking" ||
+                    pickStatus ===
+                    "completed"
+                ) {
+                    associateId =
+                        getRandomItem(
+                            associateIds
+                        );
 
-            // No associate until pick actually starts.
-            const associate =
-                pickStatus === "ready_to_pick"
-                    ? null
-                    : getRandomItem(associates);
+                    startedAt =
+                        addMinutes(
+                            createdAt,
+                            randomNumber(
+                                30,
+                                360
+                            )
+                        );
 
-            const startedAt =
-                pickStatus === "picking" ||
-                    pickStatus === "completed"
-                    ? new Date(
-                        createdAt.getTime() +
-                        randomNumber(
-                            15,
-                            180
-                        ) *
-                        60 *
-                        1000
-                    )
-                    : null;
+                    if (
+                        startedAt >
+                        operationalDate
+                    ) {
+                        startedAt =
+                            addMinutes(
+                                operationalDate,
+                                -randomNumber(
+                                    30,
+                                    120
+                                )
+                            );
+                    }
 
-            const completedAt =
-                pickStatus === "completed" &&
+                    latestPickTime =
+                        startedAt;
+                }
+
+                if (
+                    pickStatus ===
+                    "completed" &&
                     startedAt
-                    ? new Date(
-                        startedAt.getTime() +
-                        randomNumber(
-                            10,
-                            60
-                        ) *
-                        60 *
-                        1000
-                    )
-                    : null;
-
-            const pick =
-                await prisma.pickAssignment.create({
-                    data: {
-                        orderId: order.id,
-
-                        area: pickData.area,
-                        sequence:
-                            pickData.sequence,
-
-                        status: pickStatus,
-
-                        associateId:
-                            associate?.id ?? null,
-
-                        startedAt,
-                        completedAt,
-                    },
-                });
-
-            // --------------------------------------------------
-            // CREATE PICK ACTIVITY
-            // --------------------------------------------------
-
-            if (
-                associate &&
-                startedAt &&
-                pickStatus === "picking"
-            ) {
-                await prisma.activity.create({
-                    data: {
-                        action:
-                            `Started picking ${pick.area} #${pick.sequence}`,
-
-                        fromStatus:
-                            "ready_to_pick",
-
-                        toStatus:
-                            "picking",
-
-                        createdAt:
+                ) {
+                    completedAt =
+                        addMinutes(
                             startedAt,
+                            randomNumber(
+                                10,
+                                75
+                            )
+                        );
 
-                        userId:
-                            associate.id,
+                    latestPickTime =
+                        completedAt;
+                }
 
-                        orderId:
-                            order.id,
-                    },
+                picksToCreate.push({
+                    id: pickId,
+
+                    orderId,
+
+                    area:
+                        pickTask.area,
+
+                    sequence:
+                        pickTask.sequence,
+
+                    status:
+                        pickStatus,
+
+                    associateId,
+
+                    startedAt,
+
+                    completedAt,
                 });
-            }
 
-            if (
-                associate &&
-                startedAt &&
-                completedAt &&
-                pickStatus === "completed"
-            ) {
-                await prisma.activity.createMany({
-                    data: [
+                // --------------------------------------------------
+                // PICK ACTIVITIES
+                // --------------------------------------------------
+
+                if (
+                    associateId &&
+                    startedAt
+                ) {
+                    activitiesToCreate.push(
                         {
-                            action:
-                                `Started picking ${pick.area} #${pick.sequence}`,
+                            id: randomUUID(),
+
+                            action: `Started picking ${pickTask.area} #${pickTask.sequence}`,
 
                             fromStatus:
                                 "ready_to_pick",
@@ -578,15 +1061,22 @@ async function main() {
                                 startedAt,
 
                             userId:
-                                associate.id,
+                                associateId,
 
-                            orderId:
-                                order.id,
-                        },
+                            orderId,
+                        }
+                    );
+                }
 
+                if (
+                    associateId &&
+                    completedAt
+                ) {
+                    activitiesToCreate.push(
                         {
-                            action:
-                                `Completed ${pick.area} #${pick.sequence}`,
+                            id: randomUUID(),
+
+                            action: `Completed ${pickTask.area} #${pickTask.sequence}`,
 
                             fromStatus:
                                 "picking",
@@ -598,42 +1088,359 @@ async function main() {
                                 completedAt,
 
                             userId:
-                                associate.id,
+                                associateId,
 
-                            orderId:
-                                order.id,
-                        },
-                    ],
+                            orderId,
+                        }
+                    );
+                }
+            }
+
+            // --------------------------------------------------
+            // SPECIAL STATUS ACTIVITIES
+            // --------------------------------------------------
+
+            if (
+                status === "delayed"
+            ) {
+                activitiesToCreate.push({
+                    id: randomUUID(),
+
+                    action:
+                        "Order delayed",
+
+                    fromStatus:
+                        "picking",
+
+                    toStatus:
+                        "delayed",
+
+                    createdAt:
+                        addMinutes(
+                            operationalDate,
+                            -20
+                        ),
+
+                    userId:
+                        teamLeadId,
+
+                    orderId,
                 });
             }
-        }
 
-        // --------------------------------------------------
-        // DISPENSE ACTIVITY
-        // --------------------------------------------------
+            if (
+                status === "canceled"
+            ) {
+                activitiesToCreate.push({
+                    id: randomUUID(),
 
-        if (
-            dispenser &&
-            dispensedAt
-        ) {
-            await prisma.activity.create({
-                data: {
-                    action: "Order dispensed",
-                    fromStatus: "ready",
-                    toStatus: "dispensed",
+                    action:
+                        "Order canceled",
+
+                    fromStatus:
+                        "pending",
+
+                    toStatus:
+                        "canceled",
+
+                    createdAt:
+                        addHours(
+                            createdAt,
+                            randomNumber(
+                                1,
+                                12
+                            )
+                        ),
+
+                    userId:
+                        teamLeadId,
+
+                    orderId,
+                });
+            }
+
+            if (
+                status === "expired"
+            ) {
+                activitiesToCreate.push({
+                    id: randomUUID(),
+
+                    action:
+                        "Order expired",
+
+                    fromStatus:
+                        "ready",
+
+                    toStatus:
+                        "expired",
+
+                    createdAt:
+                        addMinutes(
+                            operationalDate,
+                            60
+                        ),
+
+                    userId:
+                        teamLeadId,
+
+                    orderId,
+                });
+            }
+
+            // --------------------------------------------------
+            // DISPENSING ACTIVITY
+            // --------------------------------------------------
+
+            if (
+                dispenserId &&
+                dispensedAt
+            ) {
+                activitiesToCreate.push({
+                    id: randomUUID(),
+
+                    action:
+                        "Order dispensed",
+
+                    fromStatus:
+                        "ready",
+
+                    toStatus:
+                        "dispensed",
 
                     createdAt:
                         dispensedAt,
 
                     userId:
-                        dispenser.id,
+                        dispenserId,
 
-                    orderId:
-                        order.id,
-                },
-            });
+                    orderId,
+                });
+            }
+
+            // --------------------------------------------------
+            // DELIVERY ACTIVITIES
+            // --------------------------------------------------
+
+            if (
+                orderType ===
+                "delivery" &&
+                (
+                    status ===
+                    "out_for_delivery" ||
+                    status ===
+                    "delivered"
+                )
+            ) {
+                const outForDeliveryAt =
+                    dispensedAt
+                        ? addMinutes(
+                            dispensedAt,
+                            randomNumber(
+                                10,
+                                30
+                            )
+                        )
+                        : addMinutes(
+                            operationalDate,
+                            -30
+                        );
+
+                activitiesToCreate.push({
+                    id: randomUUID(),
+
+                    action:
+                        "Order out for delivery",
+
+                    fromStatus:
+                        "dispensed",
+
+                    toStatus:
+                        "out_for_delivery",
+
+                    createdAt:
+                        outForDeliveryAt,
+
+                    userId:
+                        dispenserId,
+
+                    orderId,
+                });
+
+                if (
+                    status ===
+                    "delivered"
+                ) {
+                    activitiesToCreate.push(
+                        {
+                            id: randomUUID(),
+
+                            action:
+                                "Order delivered",
+
+                            fromStatus:
+                                "out_for_delivery",
+
+                            toStatus:
+                                "delivered",
+
+                            createdAt:
+                                addMinutes(
+                                    outForDeliveryAt,
+                                    randomNumber(
+                                        30,
+                                        120
+                                    )
+                                ),
+
+                            userId:
+                                dispenserId,
+
+                            orderId,
+                        }
+                    );
+                }
+            }
+
+            // --------------------------------------------------
+            // SHIPPING ACTIVITIES
+            // --------------------------------------------------
+
+            if (
+                orderType ===
+                "shipping" &&
+                (
+                    status ===
+                    "shipped" ||
+                    status ===
+                    "delivered"
+                )
+            ) {
+                const shippedAt =
+                    addMinutes(
+                        operationalDate,
+                        -randomNumber(
+                            30,
+                            180
+                        )
+                    );
+
+                activitiesToCreate.push({
+                    id: randomUUID(),
+
+                    action:
+                        "Order shipped",
+
+                    fromStatus:
+                        "ready",
+
+                    toStatus:
+                        "shipped",
+
+                    createdAt:
+                        shippedAt,
+
+                    userId:
+                        teamLeadId,
+
+                    orderId,
+                });
+
+                if (
+                    status ===
+                    "delivered"
+                ) {
+                    activitiesToCreate.push(
+                        {
+                            id: randomUUID(),
+
+                            action:
+                                "Order delivered",
+
+                            fromStatus:
+                                "shipped",
+
+                            toStatus:
+                                "delivered",
+
+                            createdAt:
+                                addHours(
+                                    shippedAt,
+                                    randomNumber(
+                                        12,
+                                        72
+                                    )
+                                ),
+
+                            userId:
+                                teamLeadId,
+
+                            orderId,
+                        }
+                    );
+                }
+            }
         }
     }
+
+    // --------------------------------------------------
+    // DATABASE INSERTS
+    // --------------------------------------------------
+
+    console.log(
+        `Creating ${ordersToCreate.length} orders...`
+    );
+
+    await createInChunks(
+        ordersToCreate,
+        500,
+        async (chunk) => {
+            await prisma.order.createMany({
+                data: chunk,
+            });
+        }
+    );
+
+    console.log(
+        `${ordersToCreate.length} orders created`
+    );
+
+    console.log(
+        `Creating ${picksToCreate.length} pick assignments...`
+    );
+
+    await createInChunks(
+        picksToCreate,
+        500,
+        async (chunk) => {
+            await prisma.pickAssignment.createMany(
+                {
+                    data: chunk,
+                }
+            );
+        }
+    );
+
+    console.log(
+        `${picksToCreate.length} pick assignments created`
+    );
+
+    console.log(
+        `Creating ${activitiesToCreate.length} activities...`
+    );
+
+    await createInChunks(
+        activitiesToCreate,
+        500,
+        async (chunk) => {
+            await prisma.activity.createMany({
+                data: chunk,
+            });
+        }
+    );
+
+    console.log(
+        `${activitiesToCreate.length} activities created`
+    );
 
     // --------------------------------------------------
     // COUNTS
@@ -660,13 +1467,33 @@ async function main() {
         "--------------------------------"
     );
 
-    console.log(`Users: ${userCount}`);
-    console.log(`Orders: ${orderCount}`);
+    console.log(
+        `Users: ${userCount}`
+    );
+
+    console.log(
+        `Orders: ${orderCount}`
+    );
+
     console.log(
         `Pick assignments: ${pickCount}`
     );
+
     console.log(
         `Activities: ${activityCount}`
+    );
+
+    // --------------------------------------------------
+    // ORDERS BY DATE
+    // --------------------------------------------------
+
+    console.log("");
+    console.log(
+        "Schedule coverage:"
+    );
+
+    console.log(
+        "7 days ago -> today -> 6 days ahead"
     );
 
     // --------------------------------------------------
@@ -683,9 +1510,13 @@ async function main() {
         });
 
     console.log("");
-    console.log("Orders by status:");
+    console.log(
+        "Orders by status:"
+    );
 
-    for (const item of ordersByStatus) {
+    for (
+        const item of ordersByStatus
+    ) {
         console.log(
             `   ${item.status}: ${item._count.status}`
         );
@@ -705,9 +1536,13 @@ async function main() {
         });
 
     console.log("");
-    console.log("Orders by type:");
+    console.log(
+        "Orders by type:"
+    );
 
-    for (const item of ordersByType) {
+    for (
+        const item of ordersByType
+    ) {
         console.log(
             `   ${item.orderType}: ${item._count.orderType}`
         );
@@ -718,18 +1553,24 @@ async function main() {
     // --------------------------------------------------
 
     const picksByArea =
-        await prisma.pickAssignment.groupBy({
-            by: ["area"],
+        await prisma.pickAssignment.groupBy(
+            {
+                by: ["area"],
 
-            _count: {
-                area: true,
-            },
-        });
+                _count: {
+                    area: true,
+                },
+            }
+        );
 
     console.log("");
-    console.log("Pick assignments by area:");
+    console.log(
+        "Pick assignments by area:"
+    );
 
-    for (const item of picksByArea) {
+    for (
+        const item of picksByArea
+    ) {
         console.log(
             `   ${item.area}: ${item._count.area}`
         );
@@ -742,8 +1583,13 @@ async function main() {
 
 main()
     .catch((error) => {
-        console.error("Seed failed:");
+        console.error("");
+        console.error(
+            "Seed failed:"
+        );
+
         console.error(error);
+
         process.exit(1);
     })
     .finally(async () => {
